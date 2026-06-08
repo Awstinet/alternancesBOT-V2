@@ -20,8 +20,6 @@ intents.members= True
 intents.reactions = True
 intents.voice_states = True
 
-print(config.DISCORD_BOT_TOKEN)
-
 bot = commands.Bot(command_prefix= ".",intents = intents)
 
 #Pour les commandes /
@@ -32,9 +30,14 @@ tree = app_commands.CommandTree(client)
 @bot.event
 async def on_ready():
 
+    await bot.load_extension("cogs.filters")
+    await bot.load_extension("cogs.applications")
+
     #Syncrhonisation des commandes /
     try:
-        synced = await bot.tree.sync(guild=discord.Object(id=idServeur))
+        guild = discord.Object(id=idServeur)
+        bot.tree.copy_global_to(guild=guild)
+        synced = await bot.tree.sync(guild=guild)
         print(f"Synchronisation de {len(synced)} commandes")
     except Exception as e:
         print(e)
@@ -53,7 +56,7 @@ async def on_ready():
                         await bot.get_channel(idSalon).send(f"<@{i[0]}>, vous avez une relance à faire auprès de `{j[2]}` pour le poste de `{j[3]}`")
                 
 
-        await asyncio.sleep(60) #Action réitérée toutes les 60 secondes
+        await asyncio.sleep(3600*24) #Action réitérée tous les jours
 
 
 

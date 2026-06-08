@@ -61,6 +61,8 @@ class Config:
     TOGGLE_SCRAPING: bool
 
     ENABLED_WEBSITES: list[str]
+    
+    DAYS_BEFORE_REVIVAL: int
 
 
 def _build_config() -> Config:
@@ -75,6 +77,8 @@ def _build_config() -> Config:
         TOGGLE_SCRAPING=_optional_bool("TOGGLE_SCRAPING", default=False),
 
         ENABLED_WEBSITES=_optional_list("ENABLED_WEBSITES", default=["linkedin", "indeed"]),
+        
+        DAYS_BEFORE_REVIVAL=_optional_int("DAYS_BEFORE_REVIVAL", default=3),
     )
     
 
