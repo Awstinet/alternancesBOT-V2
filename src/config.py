@@ -19,6 +19,16 @@ def _require(key: str) -> str:
     return value
 
 
+def _require_int(key: str) -> int:
+    raw = _require(key)
+    try:
+        return int(raw)
+    except ValueError:
+        raise EnvironmentError(
+            f"[CONFIG] '{key}' doit être un entier, valeur reçue : '{raw}'"
+        )
+
+
 def _optional(key: str, default: str = "") -> str: return os.getenv(key, default)
 
 
@@ -63,13 +73,16 @@ class Config:
     ENABLED_WEBSITES: list[str]
     
     DAYS_BEFORE_REVIVAL: int
+    
+    LINKEDIN_LOGIN: str
+    LINKEDIN_PASSWORD: str
 
 
 def _build_config() -> Config:
     return Config(
         DISCORD_BOT_TOKEN=_require("DISCORD_BOT_TOKEN"),
-        DISCORD_GUILD_ID=_require("DISCORD_GUILD_ID"),
-        DISCORD_CHANNEL_ID=_require("DISCORD_CHANNEL_ID"),
+        DISCORD_GUILD_ID=_require_int("DISCORD_GUILD_ID"),
+        DISCORD_CHANNEL_ID=_require_int("DISCORD_CHANNEL_ID"),
 
         SCRAPING_INTERVAL_MINUTES=_optional_int("SCRAPING_INTERVAL_MINUTES", default=60),
         SCRAPING_MAX_RESULTS=_optional_int("SCRAPING_MAX_RESULTS", default=10),
@@ -79,6 +92,9 @@ def _build_config() -> Config:
         ENABLED_WEBSITES=_optional_list("ENABLED_WEBSITES", default=["linkedin", "indeed"]),
         
         DAYS_BEFORE_REVIVAL=_optional_int("DAYS_BEFORE_REVIVAL", default=3),
+        
+        LINKEDIN_LOGIN=_optional("LINKEDIN_LOGIN", default="None"),
+        LINKEDIN_PASSWORD=_optional("LINKEDIN_PASSWORD", default="None"),
     )
     
 
