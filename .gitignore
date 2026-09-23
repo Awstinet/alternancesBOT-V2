@@ -30,3 +30,6 @@ venv/
 ENV/
 
 database.db
+
+# Profils Chrome persistants (contiennent les cookies de session)
+src/datas/browser_profiles/

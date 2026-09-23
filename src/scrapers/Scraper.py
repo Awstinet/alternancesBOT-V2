@@ -1,5 +1,6 @@
 import os
 import time
+from pathlib import Path
 from urllib.parse import quote
 
 import undetected_chromedriver as uc
@@ -43,32 +44,53 @@ class Scraper:
     COMPANY_SELECTOR = ""
     LOCATION_SELECTOR = ""
 
-    def __init__(self, baselink: str, login: str = "", password: str = ""):
+    def __init__(self, baselink: str, login: str = "", password: str = "", persist_session: bool = True):
         self.baselink = baselink
         self.login = login
         self.password = password
+        self.persist_session = persist_session
         self.driver = None
+
+    def _profile_dir(self):
+        """Dossier de profil Chrome dédié à ce scraper : les cookies (session
+        de connexion incluse) y persistent d'une exécution à l'autre."""
+        if not self.persist_session:
+            return None
+        profile_dir = Path(__file__).resolve().parent.parent / "datas" / "browser_profiles" / type(self).__name__.lower()
+        profile_dir.mkdir(parents=True, exist_ok=True)
+        return str(profile_dir)
 
     def _launch_driver(self):
         browser_path = get_browser()
+        profile_dir = self._profile_dir()
 
         if browser_path and browser_path.lower().endswith(CHROMIUM_EXE_NAMES) and os.path.isfile(browser_path):
             try:
                 print(f"Navigateur par défaut détecté : {browser_path}")
-                return uc.Chrome(browser_executable_path=browser_path)
+                return uc.Chrome(browser_executable_path=browser_path, user_data_dir=profile_dir)
             except WebDriverException as e:
                 print(f"Impossible d'utiliser le navigateur par défaut ({e}). Bascule sur Selenium standard.")
 
         print("Utilisation de Selenium standard (chromedriver auto-géré).")
-        return webdriver.Chrome()
+        options = webdriver.ChromeOptions()
+        if profile_dir:
+            options.add_argument(f"--user-data-dir={profile_dir}")
+        return webdriver.Chrome(options=options)
 
-    def connect(self):
-        if not self.LOGIN_URL:
-            raise NotImplementedError(f"{type(self).__name__} doit définir LOGIN_URL.")
-
+    def _ensure_connected(self):
+        if self.driver is not None:
+            return
         self.driver = self._launch_driver()
+        if self.LOGIN_URL:
+            self._login()
+
+    def _login(self):
         driver = self.driver
         driver.get(self.LOGIN_URL)
+
+        if self.LOGIN_SUCCESS_URL_CONTAINS and self.LOGIN_SUCCESS_URL_CONTAINS in driver.current_url:
+            print("Session existante réutilisée, connexion sautée.")
+            return
 
         wait = WebDriverWait(driver, 15)
         username_field = wait.until(lambda d: self._first_visible(d, self.USERNAME_SELECTOR))
@@ -87,7 +109,12 @@ class Scraper:
                     "(CAPTCHA / vérification) bloque probablement la connexion automatisée."
                 )
         print("Connecté !")
-        return driver
+
+    def connect(self):
+        """Force une (re)connexion et retourne le driver."""
+        self.driver = None
+        self._ensure_connected()
+        return self.driver
 
     def searchJobs(self, keyword: str, max_results: int = 25, start: int = 0):
         if not self.SEARCH_URL_TEMPLATE or not self.CARD_SELECTOR:
@@ -95,8 +122,7 @@ class Scraper:
                 f"{type(self).__name__} doit définir SEARCH_URL_TEMPLATE et CARD_SELECTOR."
             )
 
-        if self.driver is None:
-            self.connect()
+        self._ensure_connected()
         driver = self.driver
 
         driver.get(self.SEARCH_URL_TEMPLATE.format(keyword=quote(keyword), start=start))
