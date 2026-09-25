@@ -7,3 +7,4 @@
 -> Il faudrait créer un export de son tableau en un fichier .csv (ou excel).
 -> Commande pour ajouter des filtres en BDD
 -> Parcours des descriptions et une IA permettrait de détecter, pour un utilisateur, si l'offre lui ets adaptée selon sa recherche & son profil.
+-> Ajouter pôle emploi
